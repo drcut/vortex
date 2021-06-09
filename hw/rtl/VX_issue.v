@@ -142,9 +142,14 @@ module VX_issue #(
             perf_fpu_stalls <= 0;
         `endif
         end else begin
-            if (decode_if.valid & !decode_if.ready) begin
-                perf_ibf_stalls <= perf_ibf_stalls  + `PERF_CTR_BITS'd1;
+            integer i;
+            reg [`PERF_CTR_BITS-1:0] tmp;
+            tmp = `PERF_CTR_BITS'd0;
+            for(i=0;i<`NUM_THREADS;i=i+1) begin
+                    tmp = tmp + {{(`PERF_CTR_BITS-1){1'b0}}, execute_if.tmask[i]};
+                end
             end
+            perf_ibf_stalls <= perf_ibf_stalls + tmp;
             if (ibuf_deq_if.valid & scoreboard_delay) begin 
                 perf_scb_stalls <= perf_scb_stalls  + `PERF_CTR_BITS'd1;
             end
