@@ -126,6 +126,7 @@ extern int vx_dump_perf(vx_device_h device, FILE* stream) {
   uint64_t mem_writes = 0;
   uint64_t mem_stalls = 0;
   uint64_t mem_lat = 0;
+  uint64_t mem_coalesced = 0;
 #endif     
       
   for (unsigned core_id = 0; core_id < num_cores; ++core_id) {     
@@ -263,20 +264,24 @@ extern int vx_dump_perf(vx_device_h device, FILE* stream) {
     smem_bank_stalls += smem_bank_st_per_core;
 
     // PERF: memory
-    uint64_t mem_reads_per_core, mem_writes_per_core, mem_stalls_per_core, mem_lat_per_core;
+    uint64_t mem_reads_per_core, mem_writes_per_core, mem_stalls_per_core, mem_lat_per_core, mem_coalesced_per_core;
     ret |= vx_csr_get_l(device, core_id, CSR_MPM_MEM_READS, CSR_MPM_MEM_READS_H, &mem_reads_per_core);                
     ret |= vx_csr_get_l(device, core_id, CSR_MPM_MEM_WRITES, CSR_MPM_MEM_WRITES_H, &mem_writes_per_core);                
     ret |= vx_csr_get_l(device, core_id, CSR_MPM_MEM_ST, CSR_MPM_MEM_ST_H, &mem_stalls_per_core);    
-    ret |= vx_csr_get_l(device, core_id, CSR_MPM_MEM_LAT, CSR_MPM_MEM_LAT_H, &mem_lat_per_core);        
+    ret |= vx_csr_get_l(device, core_id, CSR_MPM_MEM_LAT, CSR_MPM_MEM_LAT_H, &mem_lat_per_core);    
+    ret |= vx_csr_get_l(device, core_id, CSR_MPM_MEM_COALESCED, CSR_MPM_MEM_COALESCED_H, &mem_coalesced_per_core);    
     int mem_utilization = (int)((double(mem_reads_per_core + mem_writes_per_core) / double(mem_reads_per_core + mem_writes_per_core + mem_stalls_per_core)) * 100);
     int mem_avg_lat = (int)(double(mem_lat_per_core) / double(mem_reads_per_core));       
     if (num_cores > 1) fprintf(stream, "PERF: core%d: memory requests=%ld (reads=%ld, writes=%ld)\n", core_id, (mem_reads_per_core + mem_writes_per_core), mem_reads_per_core, mem_writes_per_core);
     if (num_cores > 1) fprintf(stream, "PERF: core%d: memory stalls=%ld (utilization=%d%%)\n", core_id, mem_stalls_per_core, mem_utilization);
     if (num_cores > 1) fprintf(stream, "PERF: core%d: memory average latency=%d cycles\n", core_id, mem_avg_lat);
+    if (num_cores > 1) fprintf(stream, "PERF: core%d: memory mem_coalesced_per_core=%ld\n", core_id, mem_coalesced_per_core);
     mem_reads  += mem_reads_per_core;
     mem_writes += mem_writes_per_core;
     mem_stalls += mem_stalls_per_core;
-    mem_lat    += mem_lat_per_core;    
+    mem_lat    += mem_lat_per_core;   
+    mem_coalesced += mem_coalesced_per_core;  
+
   #endif
   }      
   
@@ -291,6 +296,7 @@ extern int vx_dump_perf(vx_device_h device, FILE* stream) {
   int smem_bank_utilization = (int)((double(smem_reads + smem_writes) / double(smem_reads + smem_writes + smem_bank_stalls)) * 100);
   int mem_utilization = (int)((double(mem_reads + mem_writes) / double(mem_reads + mem_writes + mem_stalls)) * 100);
   int mem_avg_lat = (int)(double(mem_lat) / double(mem_reads));
+  int mem_avg_coalesced = (int)((double(mem_coalesced) / double(mem_reads + mem_writes))*100);
   fprintf(stream, "PERF: ibuffer stalls=%ld\n", ibuffer_stalls);
   fprintf(stream, "PERF: scoreboard stalls=%ld\n", scoreboard_stalls);
   fprintf(stream, "PERF: alu unit stalls=%ld\n", alu_stalls);
@@ -316,6 +322,8 @@ extern int vx_dump_perf(vx_device_h device, FILE* stream) {
   fprintf(stream, "PERF: memory requests=%ld (reads=%ld, writes=%ld)\n", (mem_reads + mem_writes), mem_reads, mem_writes);
   fprintf(stream, "PERF: memory stalls=%ld (utilization=%d%%)\n", mem_stalls, mem_utilization);
   fprintf(stream, "PERF: memory average latency=%d cycles\n", mem_avg_lat);
+  fprintf(stream, "PERF: memory coalesced=%ld\n", mem_coalesced);
+  fprintf(stream, "PERF: memory coalesced/memory request=%d%%\n", mem_avg_coalesced);
 #endif
 
   return ret;

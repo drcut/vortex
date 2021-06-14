@@ -64,6 +64,9 @@ module VX_execute #(
         `SCOPE_BIND_VX_execute_lsu_unit
         .clk            (clk),
         .reset          (reset),
+    `ifdef PERF_ENABLE
+        .perf_memsys_if  (perf_memsys_if),
+    `endif  
         .dcache_req_if  (dcache_req_if),
         .dcache_rsp_if  (dcache_rsp_if),
         .lsu_req_if     (lsu_req_if),

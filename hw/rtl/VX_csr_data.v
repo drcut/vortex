@@ -169,6 +169,8 @@ module VX_csr_data #(
             `CSR_MPM_MEM_ST_H       : read_data_r = 32'(perf_memsys_if.mem_stalls[`PERF_CTR_BITS-1:32]);
             `CSR_MPM_MEM_LAT        : read_data_r = perf_memsys_if.mem_latency[31:0];
             `CSR_MPM_MEM_LAT_H      : read_data_r = 32'(perf_memsys_if.mem_latency[`PERF_CTR_BITS-1:32]);
+            `CSR_MPM_MEM_COALESCED     : read_data_r = perf_memsys_if.mem_coalesced[31:0];
+            `CSR_MPM_MEM_COALESCED_H   : read_data_r = 32'(perf_memsys_if.mem_coalesced[`PERF_CTR_BITS-1:32]);
         `endif
             
             `CSR_SATP      : read_data_r = 32'(csr_satp);

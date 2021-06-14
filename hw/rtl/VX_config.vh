@@ -211,6 +211,8 @@
 `define CSR_MPM_MEM_ST_H       12'hB9B
 `define CSR_MPM_MEM_LAT        12'hB1C     // memory latency (total)
 `define CSR_MPM_MEM_LAT_H      12'hB9C
+`define CSR_MPM_MEM_COALESCED        12'hB1D     // memory coalesced (total)
+`define CSR_MPM_MEM_COALESCED_H      12'hB9D
 
 // Machine Information Registers
 `define CSR_MVENDORID   12'hF11

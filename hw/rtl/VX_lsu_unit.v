@@ -8,6 +8,10 @@ module VX_lsu_unit #(
     input wire clk,
     input wire reset,
 
+    `ifdef PERF_ENABLE
+    VX_perf_memsys_if    perf_memsys_if,
+    `endif
+
    // Dcache interface
     VX_dcache_core_req_if dcache_req_if,
     VX_dcache_core_rsp_if dcache_rsp_if,
@@ -38,12 +42,28 @@ module VX_lsu_unit #(
         assign full_address[i] = lsu_req_if.base_addr[i] + lsu_req_if.offset;
     end
 
+
+
     wire [`NUM_THREADS-1:0] addr_matches;
     for (genvar i = 0; i < `NUM_THREADS; i++) begin
         assign addr_matches[i] = (full_address[0][31:2] == full_address[i][31:2]) || ~lsu_req_if.tmask[i];
     end    
     wire is_dup_load = lsu_req_if.wb && lsu_req_if.tmask[0] && (& addr_matches);
-    
+
+    `ifdef PERF_ENABLE
+    reg [`PERF_CTR_BITS-1:0] coalesced_memory_requests;
+    always @(posedge clk) begin
+        if (reset) begin
+            coalesced_memory_requests <= 0;
+        end else begin
+            if (is_dup_load && req_valid) begin 
+                coalesced_memory_requests <= coalesced_memory_requests  + `PERF_CTR_BITS'd1;
+            end
+        end
+    end
+    assign perf_memsys_if.mem_coalesced = coalesced_memory_requests; 
+    `endif
+
     wire ready_in;
     wire stall_in = ~ready_in && req_valid; 
 
